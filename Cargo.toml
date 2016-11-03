@@ -9,8 +9,4 @@ homepage = "https://github.com/hgallagher1993/rsteglib"
 documentation = "https://docs.rs/rayon/"
 readme = "README.md"
 
-exclude = [
-    "src/lib.rs"
-]
-
 [dependencies]
