@@ -6,7 +6,6 @@ description = "Rust Steganography Library"
 license = "MIT"
 repository = "https://github.com/hgallagher1993/rsteglib"
 homepage = "https://github.com/hgallagher1993/rsteglib"
-documentation = "https://docs.rs/rayon/"
 readme = "README.md"
 
 [dependencies]
