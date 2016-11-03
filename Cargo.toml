@@ -1,6 +1,6 @@
 [package]
 name = "rsteglib"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Hugh Gallagher <hgallagher1993@gmail.com>"]
 description = "Rust Steganography Library"
 license = "MIT"
