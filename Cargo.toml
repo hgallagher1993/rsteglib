@@ -9,3 +9,5 @@ homepage = "https://github.com/hgallagher1993/rsteglib"
 readme = "README.md"
 
 [dependencies]
+image = "0.10.4"
+bitreader = "0.1.0"
