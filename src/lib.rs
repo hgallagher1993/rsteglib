@@ -4,7 +4,7 @@ extern crate bitreader;
 use std::path::Path;
 use std::fs::File;
 
-use image::*;
+use image::{DynamicImage, GenericImage, ImageFormat};
 
 use bitreader::BitReader;
 
