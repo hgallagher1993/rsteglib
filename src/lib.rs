@@ -2,6 +2,7 @@ extern crate image;
 extern crate bitreader;
 
 use std::path::Path;
+use std::fs::File;
 
 use image::*;
 
@@ -19,20 +20,24 @@ impl StegoObject
         }
     }
 
-    pub fn encode_with(&mut self, message: &str) -> RgbImage {
+    pub fn encode_with(&mut self, message: &str) {
         let bit_vector = get_bit_vec(message);
 
-        let encoded_image = encode(&mut self.cover_image, &bit_vector);
+        encode(&mut self.cover_image, &bit_vector);
 
-        encoded_image
+        let ref mut fout = File::create(&Path::new("/home/hugh/Pictures/yurt.png")).unwrap();
+
+        let _ = self.cover_image.save(fout, ImageFormat::PNG).unwrap();
     }
 }
 
+// Get a Vector of Bits to Encode the Image with
 fn get_bit_vec(message: &str) -> Vec<u8> {
     let mut bit_vector = Vec::new();
     let mut reader = BitReader::new(&message.as_bytes());
 
 
+    // Multipled by 8 because it's a Vec of bits not bytes
     for _ in 0..message.len() * 8 {
         bit_vector.push(reader.read_u8(1).unwrap());
     }
@@ -40,26 +45,37 @@ fn get_bit_vec(message: &str) -> Vec<u8> {
     bit_vector
 }
 
-fn encode(c_image: &mut DynamicImage, bit_vec: &Vec<u8>) -> RgbImage {
-    let mut rgb_img = c_image.to_rgb();
-    let mut bit_to_hide = 0u8;
+// Encode the Image with the Vector of Bits
+fn encode(c_image: &mut DynamicImage, bit_vec: &Vec<u8>) {
+    let (width, height) = c_image.dimensions();
 
-    for (index, pixel) in rgb_img.pixels_mut().enumerate() {
-        if index >= 8 {
-            break;
+    let mut img = c_image.as_mut_rgb8().unwrap();
+
+    let mut index = 0;
+
+    'outer: for y_co_ord in 0..height {
+        for x_co_ord in 0..width {
+            let pixel = img.get_pixel_mut(x_co_ord, y_co_ord);
+
+            for channel in 0..3 {
+                if index >= bit_vec.len() {
+                    println!("{}", pixel.data[1]);
+                    break 'outer;
+                }
+
+                pixel.data[channel] = (pixel.data[channel] & 0xFE) | bit_vec[index];
+
+                index += 1;
+            }
         }
-
-        bit_to_hide = bit_vec[index];
-
-        pixel.data[index % 3] = (pixel.data[index % 3] & 0xFE) | bit_to_hide;
     }
-
-    rgb_img
 }
 
-/*
-    Tests
-*/
+/***************************************************************************************************
+ *                                                                                                 *
+ *                                         Tests                                                   *
+ *                                                                                                 *
+ ***************************************************************************************************/
 
 #[test]
 fn test_get_bit_vec_len() {
@@ -81,11 +97,11 @@ fn test_encode_red_channel_lsb_set() {
     let mut img = image::open(&Path::new("/home/hugh/Pictures/scenery.jpg")).unwrap();
     let bit_vec = vec![0, 1, 1, 0, 1, 0, 0, 0];
 
-    let encoded_image = encode(&mut img, &bit_vec);
+    encode(&mut img.as_mut_rgb8().unwrap(), &bit_vec);
 
     let pixel = img.get_pixel(0, 0);
 
-    assert_eq!(pixel.data[0] % 2, 0);
+    assert_eq!(pixel.data[0] % 2, bit_vec[0]);
 }
 
 #[test]
@@ -93,11 +109,11 @@ fn test_encode_green_channel_lsb_set() {
     let mut img = image::open(&Path::new("/home/hugh/Pictures/scenery.jpg")).unwrap();
     let bit_vec = vec![0, 1, 1, 0, 1, 0, 0, 0];
 
-    let encoded_image = encode(&mut img, &bit_vec);
+    encode(&mut img.as_mut_rgb8().unwrap(), &bit_vec);
 
     let pixel = img.get_pixel(0, 0);
 
-    assert_eq!(pixel.data[1] % 2, 1);
+    assert_eq!(pixel.data[1] % 2, bit_vec[1]);
 }
 
 #[test]
@@ -105,21 +121,38 @@ fn test_encode_blue_channel_lsb_set() {
     let mut img = image::open(&Path::new("/home/hugh/Pictures/scenery.jpg")).unwrap();
     let bit_vec = vec![0, 1, 1, 0, 1, 0, 0, 0];
 
-    let encoded_image = encode(&mut img, &bit_vec);
+    encode(&mut img.as_mut_rgb8().unwrap(), &bit_vec);
 
     let pixel = img.get_pixel(0, 0);
 
-    assert_eq!(pixel.data[2] % 2, 1);
+    assert_eq!(pixel.data[2] % 2 as u8, bit_vec[2]);
 }
 
-/*#[test]
+#[test]
 fn test_full_byte_is_encoded() {
     let mut img = image::open(&Path::new("/home/hugh/Pictures/scenery.jpg")).unwrap();
+    let mut encoded_bit_vec = Vec::new();
+    let mut count = 0;
+
     let bit_vec = vec![0, 1, 1, 0, 1, 0, 0, 0];
 
-    let encoded_image = encode(&mut img, &bit_vec);
+    encode(&mut img.as_mut_rgb8().unwrap(), &bit_vec);
 
+    'outer: for x_co_ord in 0..3 {
+        let pixel = img.get_pixel(x_co_ord, 0);
 
-}*/
+        for channel in 0..3 {
+            if count >= 8 {
+                break 'outer;
+            }
+
+            encoded_bit_vec.push(pixel.data[channel] % 2);
+
+            count += 1;
+        }
+    }
+
+    assert_eq!(encoded_bit_vec, bit_vec);
+}
 
 
