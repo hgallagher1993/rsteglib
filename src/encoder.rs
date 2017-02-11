@@ -6,14 +6,14 @@ use image;
 
 use bitreader::BitReader;
 
-pub struct StegObject {
+pub struct CoverImage {
     cover_image: DynamicImage
 }
 
-impl StegObject
+impl CoverImage
 {
-    pub fn new(file_path: &str) -> StegObject {
-        StegObject {
+    pub fn new(file_path: &str) -> CoverImage {
+        CoverImage {
             cover_image: image::open(&Path::new(&file_path)).unwrap()
         }
     }
