@@ -1,8 +1,7 @@
 extern crate rsteglib;
 extern crate image;
 
-use rsteglib::StegObject;
-use image::GenericImage;
+use rsteglib::encoder::StegObject;
 
 #[test]
 fn test_create_struct() {
