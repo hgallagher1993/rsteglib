@@ -74,7 +74,7 @@ fn encode(c_image: &mut DynamicImage, bit_vec: &Vec<u8>) {
  *                                                                                                 *
  ***************************************************************************************************/
 
-#[cfg(ignore)]
+#[cfg(test)]
 #[test]
 fn test_get_bit_vec_len() {
     let bits = get_bit_vec("h");
@@ -82,7 +82,7 @@ fn test_get_bit_vec_len() {
     assert_eq!(8, bits.len());
 }
 
-#[cfg(ignore)]
+#[cfg(test)]
 #[test]
 fn test_get_bit_vec() {
     let test_bits = vec![0, 1, 1, 0, 1, 0, 0, 0];
@@ -91,7 +91,7 @@ fn test_get_bit_vec() {
     assert_eq!(bits, test_bits);
 }
 
-#[cfg(ignore)]
+#[cfg(test)]
 #[test]
 fn test_encode_red_channel_lsb_set() {
     let mut img = image::open(&Path::new("/home/hugh/Pictures/scenery.jpg")).unwrap();
@@ -104,7 +104,7 @@ fn test_encode_red_channel_lsb_set() {
     assert_eq!(pixel.data[0] % 2, bit_vec[0]);
 }
 
-#[cfg(ignore)]
+#[cfg(test)]
 #[test]
 fn test_encode_green_channel_lsb_set() {
     let mut img = image::open(&Path::new("/home/hugh/Pictures/scenery.jpg")).unwrap();
@@ -117,7 +117,7 @@ fn test_encode_green_channel_lsb_set() {
     assert_eq!(pixel.data[1] % 2, bit_vec[1]);
 }
 
-#[cfg(ignore)]
+#[cfg(test)]
 #[test]
 fn test_encode_blue_channel_lsb_set() {
     let mut img = image::open(&Path::new("/home/hugh/Pictures/scenery.jpg")).unwrap();
@@ -130,7 +130,7 @@ fn test_encode_blue_channel_lsb_set() {
     assert_eq!(pixel.data[2] % 2 as u8, bit_vec[2]);
 }
 
-#[cfg(ignore)]
+#[cfg(test)]
 #[test]
 fn test_full_byte_is_encoded() {
     let mut img = image::open(&Path::new("/home/hugh/Pictures/scenery.jpg")).unwrap();
