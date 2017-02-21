@@ -33,7 +33,6 @@ fn get_bit_vec(message: &str) -> Vec<u8> {
     let mut bit_vector = Vec::new();
     let mut reader = BitReader::new(&message.as_bytes());
 
-
     // Multipled by 8 because it's a Vec of bits not bytes
     for _ in 0..message.len() * 8 {
         bit_vector.push(reader.read_u8(1).unwrap());
