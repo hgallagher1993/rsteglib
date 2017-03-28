@@ -5,17 +5,15 @@ use image::{DynamicImage, GenericImage};
 use image;
 
 pub struct StegObject {
-    steg_object: DynamicImage
+    steg_object: DynamicImage,
 }
 
 impl StegObject {
-    pub fn new (file_path: &str) -> StegObject {
-        StegObject {
-            steg_object: image::open(&Path::new(&file_path)).unwrap()
-        }
+    pub fn new(file_path: &str) -> StegObject {
+        StegObject { steg_object: image::open(&Path::new(&file_path)).unwrap() }
     }
 
-    pub fn decode (&self) -> Vec<u8> {
+    pub fn decode(&self) -> Vec<u8> {
         let mut bit_vec: Vec<u8> = Vec::<u8>::new();
         let mut count = 0;
         let mut byte_vec = vec![0];

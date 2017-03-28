@@ -7,14 +7,12 @@ use image;
 use bitreader::BitReader;
 
 pub struct CoverImage {
-    cover_image: DynamicImage
+    cover_image: DynamicImage,
 }
 
 impl CoverImage {
     pub fn new(file_path: &str) -> CoverImage {
-        CoverImage {
-            cover_image: image::open(&Path::new(&file_path)).unwrap()
-        }
+        CoverImage { cover_image: image::open(&Path::new(&file_path)).unwrap() }
     }
 
     pub fn encode_with(&mut self, message: &str) {
@@ -33,7 +31,7 @@ fn get_bit_vec(message: &str) -> Vec<u8> {
     let mut bit_vector = Vec::new();
     let mut reader = BitReader::new(&message.as_bytes());
 
-    // Multipled by 8 because it's a Vec of bits not bytes
+    // Multiplied by 8 because it's a Vec of bits not bytes
     for _ in 0..message.len() * 8 {
         bit_vector.push(reader.read_u8(1).unwrap());
     }
@@ -43,35 +41,38 @@ fn get_bit_vec(message: &str) -> Vec<u8> {
 
 // Encode the Image with the Vector of Bits
 fn encode(c_image: &mut DynamicImage, bit_vec: &Vec<u8>) {
+    let mut image_blocks = Vec::new();
+    let mut img = c_image.as_mut_rgb8().unwrap();
     let (width, height) = c_image.dimensions();
 
-    let mut img = c_image.as_mut_rgb8().unwrap();
+    // 9 is used here because each 8 x 8 block will have a dct for each colour and each colour will
+    // hold 3 bits of information.
+    let max_iterations = if bit_vec.len() / 9 == 0 { bit_vec.len() / 9 } else { (bit_vec.len() / 9 ) + 1 };
 
-    let mut index = 0;
+    let image_blocks = tile_image(img, max_iterations);
+}
 
-    'outer: for y_co_ord in 0..height {
-        for x_co_ord in 0..width {
-            let pixel = img.get_pixel_mut(x_co_ord, y_co_ord);
+fn tile_image(image: &mut DynamicImage, max_iterations: u32) -> Vec<Pixel> {
+    let mut blocks = Vec::new();
 
-            for channel in 0..3 {
-                if index >= bit_vec.len() {
-                    println!("{}", pixel.data[1]);
-                    break 'outer;
-                }
+    for block_number in 0..max_iterations {
+        let index = block_number * 8;
 
-                pixel.data[channel] = (pixel.data[channel] & 0xFE) | bit_vec[index];
-
-                index += 1;
+        for row in 0..8 {
+            for column in 0..8 {
+                blocks.push(image.get_pixel_mut(row, column + index));
             }
         }
     }
+
+    blocks
 }
 
-/***************************************************************************************************
- *                                                                                                 *
- *                                         Tests                                                   *
- *                                                                                                 *
- ***************************************************************************************************/
+/**************************************************************************************************
+ *                                                                                                *
+ *                                         Tests                                                  *
+ *                                                                                                *
+ **************************************************************************************************/
 
 #[cfg(test)]
 #[test]
