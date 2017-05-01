@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::fs::File;
 
-use image::{DynamicImage, GenericImage, ImageFormat};
+use image::{ DynamicImage, GenericImage, ImageFormat };
 use image;
 
 use bitreader::BitReader;
@@ -52,12 +52,7 @@ fn tile_image(c_image: &DynamicImage) -> Vec<image::Rgba<u8>> {
     for row_index in 0..(height / 8) as u32 {
         for col_index in 0..(width / 8) as u32 {
             for row in 0..8 {
-                for column in 0..8 {
-                    /*if row_index < 1 {
-                        println!("{}. . .{}. . .{}. . .{}", column, row, col_index, row_index);
-                    }*/
-
-                    image_blocks.push(c_image.get_pixel(column + (col_index * 8), row + (row_index * 8)));
+                for column in 0..8 {image_blocks.push(c_image.get_pixel(column + (col_index * 8), row + (row_index * 8)));
                 }
             }
         }
