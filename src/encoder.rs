@@ -7,7 +7,7 @@ use image;
 use bitreader::BitReader;
 
 pub struct CoverImage {
-    cover_image: DynamicImage,
+    cover_image: DynamicImage
 }
 
 impl CoverImage {
@@ -15,10 +15,10 @@ impl CoverImage {
         CoverImage { cover_image: image::open(&Path::new(&file_path)).unwrap() }
     }
 
-    pub fn encode_with(&mut self, message: &str) {
+    pub fn encode_with(&self, message: &str) {
         let bit_vector = get_bit_vec(message);
 
-        encode(&mut self.cover_image, &bit_vector);
+        encode(&self.cover_image, &bit_vector);
 
         let ref mut fout = File::create(&Path::new("/home/hugh/Pictures/yurt.png")).unwrap();
 
@@ -39,33 +39,31 @@ fn get_bit_vec(message: &str) -> Vec<u8> {
     bit_vector
 }
 
-// Encode the Image with the Vector of Bits
-fn encode(c_image: &mut DynamicImage, bit_vec: &Vec<u8>) {
-    let mut image_blocks = Vec::new();
-    let mut img = c_image.as_mut_rgb8().unwrap();
-    let (width, height) = c_image.dimensions();
-
-    // 9 is used here because each 8 x 8 block will have a dct for each colour and each colour will
-    // hold 3 bits of information.
-    let max_iterations = if bit_vec.len() / 9 == 0 { bit_vec.len() / 9 } else { (bit_vec.len() / 9 ) + 1 };
-
-    let image_blocks = tile_image(img, max_iterations);
+// Encode the image with the Vector of Bits
+fn encode(c_image: &DynamicImage, bit_vec: &Vec<u8>) {
+    let tiled_image = tile_image(c_image);
 }
 
-fn tile_image(image: &mut DynamicImage, max_iterations: u32) -> Vec<Pixel> {
-    let mut blocks = Vec::new();
+fn tile_image(c_image: &DynamicImage) -> Vec<image::Rgba<u8>> {
+    let (width, height) = c_image.dimensions();
 
-    for block_number in 0..max_iterations {
-        let index = block_number * 8;
+    let mut image_blocks = Vec::new();
 
-        for row in 0..8 {
-            for column in 0..8 {
-                blocks.push(image.get_pixel_mut(row, column + index));
+    for row_index in 0..(height / 8) as u32 {
+        for col_index in 0..(width / 8) as u32 {
+            for row in 0..8 {
+                for column in 0..8 {
+                    /*if row_index < 1 {
+                        println!("{}. . .{}. . .{}. . .{}", column, row, col_index, row_index);
+                    }*/
+
+                    image_blocks.push(c_image.get_pixel(column + (col_index * 8), row + (row_index * 8)));
+                }
             }
         }
     }
 
-    blocks
+    image_blocks
 }
 
 /**************************************************************************************************
@@ -156,4 +154,74 @@ fn test_full_byte_is_encoded() {
     }
 
     assert_eq!(encoded_bit_vec, bit_vec);
+}
+
+#[cfg(test)]
+#[test]
+fn test_tile_image_length() {
+    let img = image::open(&Path::new("/home/hugh/Pictures/colour.jpg")).unwrap();
+
+    let vec = tile_image(&img);
+
+    assert_eq!(vec.len(), 91200);
+}
+
+#[cfg(test)]
+#[test]
+fn test_tile_image_first_pixel() {
+    let img = image::open(&Path::new("/home/hugh/Pictures/project.jpg")).unwrap();
+
+    let pixel = img.get_pixel(0, 0);
+
+    let vec = tile_image(&img);
+
+    assert_eq!(vec[0], pixel);
+}
+
+#[cfg(test)]
+#[test]
+fn test_tile_image_random_pixel1() {
+    let img = image::open(&Path::new("/home/hugh/Pictures/project.jpg")).unwrap();
+
+    let pixel = img.get_pixel(15, 7);
+
+    let vec = tile_image(&img);
+
+    assert_eq!(vec[127], pixel);
+}
+
+#[cfg(test)]
+#[test]
+fn test_tile_image_random_pixel2() {
+    let img = image::open(&Path::new("/home/hugh/Pictures/project.jpg")).unwrap();
+
+    let pixel = img.get_pixel(40, 16);
+
+    let vec = tile_image(&img);
+
+    assert_eq!(vec[6720], pixel);
+}
+
+#[cfg(test)]
+#[test]
+fn test_tile_image_random_pixel3() {
+    let img = image::open(&Path::new("/home/hugh/Pictures/project.jpg")).unwrap();
+
+    let pixel = img.get_pixel(15, 7);
+
+    let vec = tile_image(&img);
+
+    assert_eq!(vec[127], pixel);
+}
+
+#[cfg(test)]
+#[test]
+fn test_tile_image_last_pixel() {
+    let img = image::open(&Path::new("/home/hugh/Pictures/project.jpg")).unwrap();
+
+    let pixel = img.get_pixel(399, 399);
+
+    let vec = tile_image(&img);
+
+    assert_eq!(vec[159999], pixel);
 }
