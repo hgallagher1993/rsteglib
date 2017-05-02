@@ -42,7 +42,7 @@ fn get_bit_vec(message: &str) -> Vec<u8> {
 // Encode the image with the Vector of Bits
 fn encode(c_image: &DynamicImage, bit_vec: &Vec<u8>) {
     let mut tiled_image_vec = tile_image(c_image);
-    let encoded_image = dct(&mut tiled_image_vec, bit_vec);
+    let encoded_image = encode_image(&mut tiled_image_vec, bit_vec);
 }
 
 fn tile_image(c_image: &DynamicImage) -> Vec<image::Rgba<u8>> {
@@ -63,10 +63,8 @@ fn tile_image(c_image: &DynamicImage) -> Vec<image::Rgba<u8>> {
     image_blocks
 }
 
-fn dct(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>) {
-    for (x, y) in (0..2).enumerate() {
+fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>) {
 
-    }
 }
 
 /**************************************************************************************************
