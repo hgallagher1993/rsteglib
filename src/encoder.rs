@@ -76,24 +76,27 @@ fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>, width
     let mut cv = 0.0;
     let mut total = 0;
 
-    for row_index in 0..(height / 8) as u32 {
-        for u in 0..8 {
-            for v in 0..8 {
-                if u == 0 {
-                    cu = 0.0
-                }
-                else {
-                    cu = 1.0 / 2.0.sqrt()
-                }
+    //just transform single pixel
+    for u in 0..(height / 8) as u32 {
+        for channel in 0..3 {
+            let colour_value = tiled_image[].data[channel];
 
-                if v == 0 {
-                    cv = 0.0
-                }
-                else {
-                    cv = 1.0 / 2.0.sqrt()
-                }
+            for u in 0..8 {
+                for v in 0..8 {
+                    if u == 0 {
+                        cu = 0.0
+                    } else {
+                        cu = 1.0 / 2.0.sqrt()
+                    }
 
-                tiled_image[0].data[0]
+                    if v == 0 {
+                        cv = 0.0
+                    } else {
+                        cv = 1.0 / 2.0.sqrt()
+                    }
+
+                    tiled_image[0].data[0]
+                }
             }
         }
     }
