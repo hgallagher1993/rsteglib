@@ -1,10 +1,13 @@
 use std::path::Path;
 use std::fs::File;
+use std::f64;
 
 use image::{ DynamicImage, GenericImage, ImageFormat };
 use image;
 
 use bitreader::BitReader;
+
+use num_traits::float::Float;
 
 pub struct CoverImage {
     cover_image: DynamicImage
@@ -12,7 +15,9 @@ pub struct CoverImage {
 
 impl CoverImage {
     pub fn new(file_path: &str) -> CoverImage {
-        CoverImage { cover_image: image::open(&Path::new(&file_path)).unwrap() }
+        CoverImage {
+            cover_image: image::open(&Path::new(&file_path)).unwrap()
+        }
     }
 
     pub fn encode_with(&self, message: &str) {
@@ -67,12 +72,28 @@ fn tile_image(c_image: &DynamicImage) -> Vec<image::Rgba<u8>> {
 }
 
 fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>, width: u32, height: u32) {
+    let mut cu = 0.0;
+    let mut cv = 0.0;
+    let mut total = 0;
+
     for row_index in 0..(height / 8) as u32 {
-        for col_index in 0..(width / 8) as u32 {
-            for y in 0..8 {
-                for x in 0..8 {
-                    
+        for u in 0..8 {
+            for v in 0..8 {
+                if u == 0 {
+                    cu = 0.0
                 }
+                else {
+                    cu = 1.0 / 2.0.sqrt()
+                }
+
+                if v == 0 {
+                    cv = 0.0
+                }
+                else {
+                    cv = 1.0 / 2.0.sqrt()
+                }
+
+                tiled_image[0].data[0]
             }
         }
     }
