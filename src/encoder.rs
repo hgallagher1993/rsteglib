@@ -172,10 +172,11 @@ fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>) {
                 }
             }
 
-            // Set modified coefficient
-            let modded_coeff = (27 + (iteration * 64)) as usize;
+            // Coefficients are set sequentially so every 192 is a new block
+            let modded_coeff = 27 + (channel * 64) + (iteration * 64 * 3) as usize;
+            let index_to_mod = 27 + (iteration * 64 * 3) as usize;
 
-            tiled_image[modded_coeff].data[channel];
+            tiled_image[index_to_mod].data[channel] = idct_coeffs[modded_coeff] as u8;
         }
     }
 }
