@@ -72,15 +72,11 @@ fn tile_image(c_image: &DynamicImage) -> Vec<image::Rgba<u8>> {
 }
 
 fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>, width: u32, height: u32) {
-    // 1
-    // - + Cv + Cu
-    // 4
-    let constants = 1 / 128;
-
     /*let mut cu = 0.0;
     let mut cv = 0.0;*/
     let mut total = 0.0;
     let mut index: usize = 0;
+    let mut count = 0;
     let num_of_iterations = if message.len() / 3 == 0 {
                                     (message.len() / 3) as u32
                                 } else {
@@ -95,6 +91,7 @@ fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>, width
 
             for y in 0..8 {
                 for x in 0..8 {
+                    // These are scaling factors, needed in future
                     /*if u == 0 {
                         cu = 0.0
                     } else {
@@ -107,12 +104,26 @@ fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>, width
                         cv = 1.0 / 2.0.sqrt()
                     }*/
 
-                    total = total + (4.0 * f64::consts::PI * ((2.0 * y as f64) + 1.0)).cos() *
-                                    (4.0 * f64::consts::PI * ((2.0 * x as f64) + 1.0)).cos();
+                    total = total + (4.0 * f64::consts::PI * ((2.0 * y as f64) + 1.0) / 16.0).cos() *
+                                    (4.0 * f64::consts::PI * ((2.0 * x as f64) + 1.0) / 16.0).cos() *
+                                    colour_value as f64;
                 }
             }
 
-            total = total * constants;
+            // 0.25 is another scaling factor
+            total = total * 0.25;
+
+            // Encode the message
+            if total.trunc() % 2.0 == 0.0 {
+                if message[count] == 1 {
+                    total = total + 1.0
+                }
+            }
+            else {
+                if message[count] == 0 {
+                    total = total + 1.0
+                }
+            }
         }
     }
 }
