@@ -79,7 +79,9 @@ fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>) {
     let mut index: usize = 0;
     let mut count = 0;
     let mut dct_coeffs: Vec<f64> = Vec::new();
+    let mut idct_coeffs: Vec<f64> = Vec::new();
     let mut colour_value: u8 = 0;
+    let mut freq_value: f64 = 0.0;
 
     let num_of_iterations = if message.len() / 3 == 0 {
                                     (message.len() / 3) as u32
@@ -89,9 +91,10 @@ fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>) {
 
     for iteration in 0..num_of_iterations {
         for channel in 0..3 {
+
+            // Forward Transform
             for v in 0..8 {
                 for u in 0..8 {
-                    // Forward transform
                     for y in 0..8 {
                         for x in 0..8 {
                             index = u + (v * 8) + (iteration * 64) as usize;
@@ -136,14 +139,14 @@ fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>) {
                 }
             }
 
-            // Inverse transform
+            // Inverse Transform
             for v in 0..8 {
                 for u in 0..8 {
                     for y in 0..8 {
                         for x in 0..8 {
                             index = u + (v * 8) + (iteration * 64) as usize;
 
-                            colour_value = tiled_image[index].data[channel];
+                            freq_value = dct_coeffs[index];
 
                             if u == 0 {
                                 cu = 1.0 / 2.0.sqrt()
@@ -159,13 +162,20 @@ fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>) {
 
                             inverse_total = inverse_total * cu * cv + (v as f64 * f64::consts::PI * (2.0 * (y as f64) + 1.0) / 16.0).cos()
                                                                     * (u as f64 * f64::consts::PI * (2.0 * (x as f64) + 1.0) / 16.0).cos()
-                                                                    * colour_value as f64;
+                                                                    * freq_value as f64;
                         }
                     }
+
+                    inverse_total = inverse_total * 0.25;
+
+                    idct_coeffs.push(inverse_total);
                 }
             }
 
-            inverse_total = inverse_total * 0.25;
+            // Set modified coefficient
+            let modded_coeff = (27 + (iteration * 64)) as usize;
+
+            tiled_image[modded_coeff].data[channel];
         }
     }
 }
