@@ -78,7 +78,7 @@ fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>) {
     let mut inverse_total = 0.0;
     let mut index: usize = 0;
     let mut count = 0;
-    let mut rgb_coeffs: Vec<f64> = Vec::new();
+    let mut dct_coeffs: Vec<f64> = Vec::new();
     let mut colour_value: u8 = 0;
 
     let num_of_iterations = if message.len() / 3 == 0 {
@@ -119,43 +119,53 @@ fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>) {
                     // 0.25, Cu and Cv are scaling factors
                     total = total * 0.25 * cu * cv;
 
-                    rgb_coeffs.push(total);
+                    dct_coeffs.push(total);
                 }
             }
 
             // Encode the message
             let coeff_to_mod = (27 + (iteration * 64)) as usize;
 
-            if rgb_coeffs[coeff_to_mod].trunc() % 2.0 == 0.0 {
+            if dct_coeffs[coeff_to_mod].trunc() % 2.0 == 0.0 {
                 if message[count] == 1 {
-                    rgb_coeffs[coeff_to_mod] = rgb_coeffs[coeff_to_mod] + 1.0
+                    dct_coeffs[coeff_to_mod] = dct_coeffs[coeff_to_mod] + 1.0
                 }
             } else {
                 if message[count] == 0 {
-                    rgb_coeffs[coeff_to_mod] = rgb_coeffs[coeff_to_mod] + 1.0
+                    dct_coeffs[coeff_to_mod] = dct_coeffs[coeff_to_mod] + 1.0
                 }
             }
 
             // Inverse transform
             for v in 0..8 {
                 for u in 0..8 {
-                    if u == 0 {
-                        cu = 0.0
-                    } else {
-                        cu = 1.0 / 2.0.sqrt()
-                    }
+                    for y in 0..8 {
+                        for x in 0..8 {
+                            index = u + (v * 8) + (iteration * 64) as usize;
 
-                    if v == 0 {
-                        cv = 0.0
-                    } else {
-                        cv = 1.0 / 2.0.sqrt()
-                    }
+                            colour_value = tiled_image[index].data[channel];
 
-                    inverse_total = inverse_total + (v as f64 * f64::consts::PI * (2.0 * (y as f64) + 1.0) / 16.0).cos()
-                                                  * (u as f64 * f64::consts::PI * (2.0 * (x as f64) + 1.0) / 16.0).cos()
-                                                  * colour_value as f64;
+                            if u == 0 {
+                                cu = 1.0 / 2.0.sqrt()
+                            } else {
+                                cu = 1.0
+                            }
+
+                            if v == 0 {
+                                cv = 1.0 / 2.0.sqrt()
+                            } else {
+                                cv = 0.0
+                            }
+
+                            inverse_total = inverse_total * cu * cv + (v as f64 * f64::consts::PI * (2.0 * (y as f64) + 1.0) / 16.0).cos()
+                                                                    * (u as f64 * f64::consts::PI * (2.0 * (x as f64) + 1.0) / 16.0).cos()
+                                                                    * colour_value as f64;
+                        }
+                    }
                 }
             }
+
+            inverse_total = inverse_total * 0.25;
         }
     }
 }
