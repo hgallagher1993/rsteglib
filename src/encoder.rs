@@ -72,79 +72,84 @@ fn tile_image(c_image: &DynamicImage) -> Vec<image::Rgba<u8>> {
 }
 
 fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>, width: u32, height: u32) {
-    /*let mut cu = 0.0;
-    let mut cv = 0.0;*/
+    let mut cu = 0.0;
+    let mut cv = 0.0;
     let mut total = 0.0;
+    let mut inverse_total = 0.0;
     let mut index: usize = 0;
     let mut count = 0;
+    let mut rgb_coeffs = Vec::new();
+
     let num_of_iterations = if message.len() / 3 == 0 {
                                     (message.len() / 3) as u32
                                 } else {
                                     ((message.len() / 3) + 1) as u32
                                 };
 
-    for _ in 0..num_of_iterations {
+    for _ in 0..(num_of_iterations * 64) {
         for channel in 0..3 {
-            index = 36 + (num_of_iterations * 64) as usize;
+            for v in 0..8 {
+                for u in 0..8 {
 
-            let colour_value = tiled_image[index].data[channel];
+                    // Forward transform
+                    for y in 0..8 {
+                        for x in 0..8 {
+                            index = u + (v * 8) + (num_of_iterations * 64) as usize;
 
-            // Forward transform
-            for y in 0..8 {
-                for x in 0..8 {
-                    // These are scaling factors, needed in future
-                    /*if u == 0 {
-                        cu = 0.0
-                    } else {
-                        cu = 1.0 / 2.0.sqrt()
+                            let colour_value = tiled_image[index].data[channel];
+
+                            if u == 0 {
+                                cu = 1.0 / 2.0.sqrt()
+                            } else {
+                                cu = 1.0
+                            }
+
+                            if v == 0 {
+                                cv = 1.0 / 2.0.sqrt()
+                            } else {
+                                cv = 0.0
+                            }
+
+                            total = total + (4.0 * f64::consts::PI * ((2.0 * y as f64) + 1.0) / 16.0).cos() *
+                                            (4.0 * f64::consts::PI * ((2.0 * x as f64) + 1.0) / 16.0).cos() *
+                                            colour_value as f64;
+                        }
                     }
 
-                    if v == 0 {
-                        cv = 0.0
+                    // 0.25, Cu and Cv are scaling factors
+                    total = total * 0.25 * cu * cv;
+
+                    // Encode the message
+                    if total.trunc() % 2.0 == 0.0 {
+                        if message[count] == 1 {
+                            total = total + 1.0
+                        }
                     } else {
-                        cv = 1.0 / 2.0.sqrt()
-                    }*/
-
-                    total = total + (4.0 * f64::consts::PI * ((2.0 * y as f64) + 1.0) / 16.0).cos() *
-                                    (4.0 * f64::consts::PI * ((2.0 * x as f64) + 1.0) / 16.0).cos() *
-                                    colour_value as f64;
-                }
-            }
-
-            // 0.25 is another scaling factor
-            total = total * 0.25;
-
-            // Encode the message
-            if total.trunc() % 2.0 == 0.0 {
-                if message[count] == 1 {
-                    total = total + 1.0
-                }
-            }
-            else {
-                if message[count] == 0 {
-                    total = total + 1.0
-                }
-            }
-
-            // Inverse transform
-            for y in 0..8 {
-                for x in 0..8 {
-                    // These are scaling factors, needed in future
-                    /*if u == 0 {
-                        cu = 0.0
-                    } else {
-                        cu = 1.0 / 2.0.sqrt()
+                        if message[count] == 0 {
+                            total = total + 1.0
+                        }
                     }
 
-                    if v == 0 {
-                        cv = 0.0
-                    } else {
-                        cv = 1.0 / 2.0.sqrt()
-                    }*/
+                    /*// Inverse transform
+                    for v in 0..8 {
+                        for u in 0..8 {
+                            if u == 0 {
+                                cu = 0.0
+                            } else {
+                                cu = 1.0 / 2.0.sqrt()
+                            }
 
-                    total = total + (4.0 * f64::consts::PI * ((2.0 * y as f64) + 1.0) / 16.0).cos() *
-                        (4.0 * f64::consts::PI * ((2.0 * x as f64) + 1.0) / 16.0).cos() *
-                        colour_value as f64;
+                            if v == 0 {
+                                cv = 0.0
+                            } else {
+                                cv = 1.0 / 2.0.sqrt()
+                            }
+
+                            inverse_total = inverse_total + (v * f64::consts::PI * ((2.0 * 4.0) + 1.0) / 16.0).cos() *
+                                                            (u * f64::consts::PI * ((2.0 * 4.0) + 1.0) / 16.0).cos() *
+                                                            colour_value as f64;
+                        }
+                    }*/
                 }
             }
         }
