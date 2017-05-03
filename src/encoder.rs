@@ -72,18 +72,30 @@ fn tile_image(c_image: &DynamicImage) -> Vec<image::Rgba<u8>> {
 }
 
 fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>, width: u32, height: u32) {
-    let mut cu = 0.0;
-    let mut cv = 0.0;
-    let mut total = 0;
+    // 1
+    // - + Cv + Cu
+    // 4
+    let constants = 1 / 128;
 
-    //just transform single pixel
-    for u in 0..(height / 8) as u32 {
+    /*let mut cu = 0.0;
+    let mut cv = 0.0;*/
+    let mut total = 0.0;
+    let mut index: usize = 0;
+    let num_of_iterations = if message.len() / 3 == 0 {
+                                    (message.len() / 3) as u32
+                                } else {
+                                    ((message.len() / 3) + 1) as u32
+                                };
+
+    for _ in 0..num_of_iterations {
         for channel in 0..3 {
-            let colour_value = tiled_image[].data[channel];
+            index = 36 + (num_of_iterations * 64) as usize;
 
-            for u in 0..8 {
-                for v in 0..8 {
-                    if u == 0 {
+            let colour_value = tiled_image[index].data[channel];
+
+            for y in 0..8 {
+                for x in 0..8 {
+                    /*if u == 0 {
                         cu = 0.0
                     } else {
                         cu = 1.0 / 2.0.sqrt()
@@ -93,11 +105,14 @@ fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>, width
                         cv = 0.0
                     } else {
                         cv = 1.0 / 2.0.sqrt()
-                    }
+                    }*/
 
-                    tiled_image[0].data[0]
+                    total = total + (4.0 * f64::consts::PI * ((2.0 * y as f64) + 1.0)).cos() *
+                                    (4.0 * f64::consts::PI * ((2.0 * x as f64) + 1.0)).cos();
                 }
             }
+
+            total = total * constants;
         }
     }
 }
