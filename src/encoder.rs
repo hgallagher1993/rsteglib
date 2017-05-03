@@ -89,6 +89,7 @@ fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>, width
 
             let colour_value = tiled_image[index].data[channel];
 
+            // Forward transform
             for y in 0..8 {
                 for x in 0..8 {
                     // These are scaling factors, needed in future
@@ -124,6 +125,8 @@ fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>, width
                     total = total + 1.0
                 }
             }
+
+           
         }
     }
 }
