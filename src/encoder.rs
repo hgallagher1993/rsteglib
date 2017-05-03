@@ -126,7 +126,27 @@ fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>, width
                 }
             }
 
-           
+            // Inverse transform
+            for y in 0..8 {
+                for x in 0..8 {
+                    // These are scaling factors, needed in future
+                    /*if u == 0 {
+                        cu = 0.0
+                    } else {
+                        cu = 1.0 / 2.0.sqrt()
+                    }
+
+                    if v == 0 {
+                        cv = 0.0
+                    } else {
+                        cv = 1.0 / 2.0.sqrt()
+                    }*/
+
+                    total = total + (4.0 * f64::consts::PI * ((2.0 * y as f64) + 1.0) / 16.0).cos() *
+                        (4.0 * f64::consts::PI * ((2.0 * x as f64) + 1.0) / 16.0).cos() *
+                        colour_value as f64;
+                }
+            }
         }
     }
 }
