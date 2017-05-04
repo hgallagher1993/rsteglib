@@ -12,7 +12,7 @@ fn test_create_struct_encoder() {
 
 #[test]
 fn test_encode_with_method() {
-    let path = "/home/hugh/Pictures/scenery.jpg";
+    let path = "/home/hugh/Pictures/colour.jpg";
     let o = CoverImage::new(path).encode_with("h");
 }
 

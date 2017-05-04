@@ -20,14 +20,10 @@ impl CoverImage {
         }
     }
 
-    pub fn encode_with(&self, message: &str) {
+    pub fn encode_with(&mut self, message: &str) {
         let bit_vector = get_bit_vec(message);
 
-        encode(&self.cover_image, &bit_vector);
-
-        let ref mut fout = File::create(&Path::new("/home/hugh/Pictures/yurt.png")).unwrap();
-
-        let _ = self.cover_image.save(fout, ImageFormat::PNG).unwrap();
+        encode(&mut self.cover_image, &bit_vector);
     }
 }
 
@@ -45,12 +41,14 @@ fn get_bit_vec(message: &str) -> Vec<u8> {
 }
 
 // Encode the image with the Vector of Bits
-fn encode(c_image: &DynamicImage, bit_vec: &Vec<u8>) {
-    let mut tiled_image_vec = tile_image(&c_image);
+fn encode(c_image: &mut DynamicImage, bit_vec: &Vec<u8>) {
+    let mut image = c_image;
 
-    //let (width, height) = c_image.dimensions();
+    let mut tiled_image_vec = tile_image(image);
 
-    let encoded_image = encode_image(&mut tiled_image_vec, bit_vec);
+    encode_image(&mut tiled_image_vec, bit_vec);
+
+    save_image(&mut image, tiled_image_vec);
 }
 
 fn tile_image(c_image: &DynamicImage) -> Vec<image::Rgba<u8>> {
@@ -139,6 +137,12 @@ fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>) {
                 }
             }
 
+            count += 1;
+
+            if count >= message.len() {
+                break
+            }
+
             // Inverse Transform
             for v in 0..8 {
                 for u in 0..8 {
@@ -179,6 +183,32 @@ fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>) {
             tiled_image[index_to_mod].data[channel] = idct_coeffs[modded_coeff] as u8;
         }
     }
+}
+
+fn save_image(c_image: &mut DynamicImage, tiled_image_vec: Vec<image::Rgba<u8>>) {
+    let (width, height) = c_image.dimensions();
+    let mut count = 0;
+    let mut index = 0;
+
+    for y in 0..height / 8 {
+        for x in 0..width / 8 {
+            for y1 in 0..height / 8 {
+                for x1 in 0..width / 8 {
+                    index = x1 + (y1 * 8) + (width * 64) + (height * 1600);
+
+                    if index >= tiled_image_vec.len() as u32 {
+                        break
+                    }
+
+                    c_image.put_pixel(x, y, tiled_image_vec[index as usize]);
+                }
+            }
+        }
+    }
+
+    let ref mut fout = File::create(&Path::new("/home/hugh/Pictures/yurt2.png")).unwrap();
+
+    let _ = c_image.save(fout, ImageFormat::PNG).unwrap();
 }
 
 /**************************************************************************************************
