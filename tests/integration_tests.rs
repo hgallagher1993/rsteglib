@@ -13,18 +13,18 @@ fn test_create_struct_encoder() {
 #[test]
 fn test_encode_with_method() {
     let path = "/home/hugh/Pictures/colour.jpg";
-    let o = CoverImage::new(path).encode_with("h");
+    let o = CoverImage::new(path).encode_with("message");
 }
 
 #[test]
 fn test_create_struct_decoder() {
-    let path = "/home/hugh/Pictures/yurt.png";
+    let path = "/home/hugh/Pictures/demo2.png";
     StegObject::new(path);
 }
 
 #[test]
 fn test_decode_method() {
-    let path = "/home/hugh/Pictures/yurt.png";
+    let path = "/home/hugh/Pictures/demo2.png";
     let vec = StegObject::new(path).decode();
     let message = String::from_utf8(vec).unwrap();
 

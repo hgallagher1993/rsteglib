@@ -4,3 +4,4 @@ extern crate num_traits;
 
 pub mod encoder;
 pub mod decoder;
+mod util;

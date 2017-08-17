@@ -1,13 +1,10 @@
+use util::DctObject;
+
 use std::path::Path;
 use std::fs::File;
-use std::f64;
 
-use image::{ DynamicImage, GenericImage, ImageFormat };
-use image;
-
+use image::{self,  DynamicImage, GenericImage, ImageFormat};
 use bitreader::BitReader;
-
-use num_traits::float::Float;
 
 pub struct CoverImage {
     cover_image: DynamicImage
@@ -60,7 +57,8 @@ fn tile_image(c_image: &DynamicImage) -> Vec<image::Rgba<u8>> {
         for col_index in 0..(width / 8) as u32 {
             for row in 0..8 {
                 for column in 0..8 {
-                    image_blocks.push(c_image.get_pixel(column + (col_index * 8), row + (row_index * 8)));
+                    image_blocks.push(c_image.get_pixel(column + (col_index * 8),
+                                                           row + (row_index * 8)));
                 }
             }
         }
@@ -70,16 +68,8 @@ fn tile_image(c_image: &DynamicImage) -> Vec<image::Rgba<u8>> {
 }
 
 fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>) {
-    let mut cu = 0.0;
-    let mut cv = 0.0;
-    let mut total = 0.0;
-    let mut inverse_total = 0.0;
-    let mut index: usize = 0;
     let mut count = 0;
-    let mut dct_coeffs: Vec<f64> = Vec::new();
-    let mut idct_coeffs: Vec<f64> = Vec::new();
-    let mut colour_value: u8 = 0;
-    let mut freq_value: f64 = 0.0;
+    let mut dct_object = DctObject::new();
 
     let num_of_iterations = if message.len() / 3 == 0 {
                                     (message.len() / 3) as u32
@@ -88,52 +78,26 @@ fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>) {
                                 };
 
     for iteration in 0..num_of_iterations {
+        dct_object.iteration = iteration;
+
         for channel in 0..3 {
-
             // Forward Transform
-            for v in 0..8 {
-                for u in 0..8 {
-                    for y in 0..8 {
-                        for x in 0..8 {
-                            index = u + (v * 8) + (iteration * 64) as usize;
-
-                            colour_value = tiled_image[index].data[channel];
-
-                            if u == 0 {
-                                cu = 1.0 / 2.0.sqrt()
-                            } else {
-                                cu = 1.0
-                            }
-
-                            if v == 0 {
-                                cv = 1.0 / 2.0.sqrt()
-                            } else {
-                                cv = 0.0
-                            }
-
-                            total = total + (v as f64 * f64::consts::PI * (2.0 * (y as f64) + 1.0) / 16.0).cos()
-                                          * (u as f64 * f64::consts::PI * (2.0 * (x as f64) + 1.0) / 16.0).cos()
-                                          * colour_value as f64;
-                        }
-                    }
-
-                    // 0.25, Cu and Cv are scaling factors
-                    total = total * 0.25 * cu * cv;
-
-                    dct_coeffs.push(total);
-                }
-            }
+            dct_object.dct(tiled_image, channel);
 
             // Encode the message
             let coeff_to_mod = (27 + (iteration * 64)) as usize;
 
-            if dct_coeffs[coeff_to_mod].trunc() % 2.0 == 0.0 {
+            // If the coefficient is even and bit is 1 add 1
+            // If the coefficient is odd and bit is 0 add 1
+            if dct_object.forward_coeffs[coeff_to_mod].trunc() % 2.0 == 0.0 {
                 if message[count] == 1 {
-                    dct_coeffs[coeff_to_mod] = dct_coeffs[coeff_to_mod] + 1.0
+                    dct_object.forward_coeffs[coeff_to_mod] =
+                        dct_object.forward_coeffs[coeff_to_mod] + 1.0
                 }
             } else {
                 if message[count] == 0 {
-                    dct_coeffs[coeff_to_mod] = dct_coeffs[coeff_to_mod] + 1.0
+                    dct_object.forward_coeffs[coeff_to_mod] =
+                        dct_object.forward_coeffs[coeff_to_mod] + 1.0
                 }
             }
 
@@ -144,51 +108,20 @@ fn encode_image(tiled_image: &mut Vec<image::Rgba<u8>>, message: &Vec<u8>) {
             }
 
             // Inverse Transform
-            for v in 0..8 {
-                for u in 0..8 {
-                    for y in 0..8 {
-                        for x in 0..8 {
-                            index = u + (v * 8) + (iteration * 64) as usize;
-
-                            freq_value = dct_coeffs[index];
-
-                            if u == 0 {
-                                cu = 1.0 / 2.0.sqrt()
-                            } else {
-                                cu = 1.0
-                            }
-
-                            if v == 0 {
-                                cv = 1.0 / 2.0.sqrt()
-                            } else {
-                                cv = 0.0
-                            }
-
-                            inverse_total = inverse_total * cu * cv + (v as f64 * f64::consts::PI * (2.0 * (y as f64) + 1.0) / 16.0).cos()
-                                                                    * (u as f64 * f64::consts::PI * (2.0 * (x as f64) + 1.0) / 16.0).cos()
-                                                                    * freq_value as f64;
-                        }
-                    }
-
-                    inverse_total = inverse_total * 0.25;
-
-                    idct_coeffs.push(inverse_total);
-                }
-            }
+            dct_object.i_dct();
 
             // Coefficients are set sequentially so every 192 is a new block
             let modded_coeff = 27 + (channel * 64) + (iteration * 64 * 3) as usize;
-            let index_to_mod = 27 + (iteration * 64 * 3) as usize;
+            let index_to_mod = 27 + (iteration * 64) as usize;
 
-            tiled_image[index_to_mod].data[channel] = idct_coeffs[modded_coeff] as u8;
+            tiled_image[index_to_mod].data[channel] = dct_object.inverse_coeffs[modded_coeff] as u8;
         }
     }
 }
 
 fn save_image(c_image: &mut DynamicImage, tiled_image_vec: Vec<image::Rgba<u8>>) {
     let (width, height) = c_image.dimensions();
-    let mut count = 0;
-    let mut index = 0;
+    let mut index;
 
     for y in 0..height / 8 {
         for x in 0..width / 8 {
@@ -206,7 +139,7 @@ fn save_image(c_image: &mut DynamicImage, tiled_image_vec: Vec<image::Rgba<u8>>)
         }
     }
 
-    let ref mut fout = File::create(&Path::new("/home/hugh/Pictures/yurt2.png")).unwrap();
+    let ref mut fout = File::create(&Path::new("/home/hugh/Pictures/demo2.png")).unwrap();
 
     let _ = c_image.save(fout, ImageFormat::PNG).unwrap();
 }

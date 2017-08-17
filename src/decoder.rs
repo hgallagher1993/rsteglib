@@ -2,8 +2,7 @@ use std::path::Path;
 use std::str;
 use std::f64;
 
-use image::{DynamicImage, GenericImage};
-use image;
+use image::{self, DynamicImage, GenericImage};
 
 use num_traits::float::Float;
 
@@ -73,20 +72,18 @@ impl StegObject {
                     }
                 }
             }
-        }
 
-        'outer: for x_co_ord in 0..3 {
-            let pixel = self.steg_object.get_pixel(x_co_ord, 0);
+            /*let coeff_to_mod = (27 + (iteration * 64)) as usize;
 
-            for channel in 0..3 {
-                if count >= 8 {
-                    break 'outer;
+            if dct_coeffs[coeff_to_mod].trunc() % 2.0 == 0.0 {
+                if message[count] == 1 {
+                    dct_coeffs[coeff_to_mod] = dct_coeffs[coeff_to_mod] + 1.0
                 }
-
-                bit_vec.push(pixel.data[channel] % 2);
-
-                count += 1;
-            }
+            } else {
+                if message[count] == 0 {
+                    dct_coeffs[coeff_to_mod] = dct_coeffs[coeff_to_mod] + 1.0
+                }
+            }*/
         }
 
         bit_vec.reverse();
