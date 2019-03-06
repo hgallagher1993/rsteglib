@@ -22,8 +22,6 @@ impl CoverImage {
     pub fn set_cover_image(mut self, input_path: &'static str) -> Self {
         self.cover_image = image::open(input_path).unwrap().as_rgb8().unwrap().clone();
 
-        self.cover_image.get_pixel_mut(0, 0);
-
         self
     }
 
