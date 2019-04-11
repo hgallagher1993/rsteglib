@@ -10,7 +10,7 @@ pub struct CoverImage {
     output_image_path: &'static str,
     message_as_bits: Vec<u8>,
     tiles: Vec<u8>,
-    transformed_tiles: Vec<f64>,
+    dct_tiles: Vec<f64>,
     modified_pixels: Vec<f64>
 }
 
@@ -22,7 +22,7 @@ impl CoverImage {
             output_image_path: "",
             message_as_bits: vec![],
             tiles: vec![],
-            transformed_tiles: vec![],
+            dct_tiles: vec![],
             modified_pixels: vec![]
         }
     }
@@ -80,6 +80,7 @@ impl CoverImage {
                             self.tiles.push(pixel.data[channel]);
                         }
                     }
+
                     count += 1;
                 }
             }
@@ -88,52 +89,13 @@ impl CoverImage {
 
     fn encode_message(&mut self) {
         let mut dct = Dct2D::new();
-        let mut count = 0;
 
         for chunk in &self.tiles.iter().chunks(64) {
             let input = chunk.map(|x| *x as f64).collect_vec();
 
             dct.set_input(input);
 
-            let mut transformed_tile = dct.forward();
-
-            // If the coefficient is even and message bit is odd add 1
-            if transformed_tile[0].round() as u32 % 2 == 0 && self.message_as_bits[count] == 1 {
-                transformed_tile[0] = transformed_tile[0] + 1.0;
-            }
-
-            dct.set_input(transformed_tile);
-
-            self.modified_pixels.extend(&dct.inverse());
-
-            count += 1;
-        }
-
-        let (width, height) = self.cover_image.dimensions();
-        let mut count = 0;
-        let mut pixel_count = 0;
-
-        for row_index in 0..(height / 8) as u32 {
-            for col_index in 0..(width / 8) as u32 {
-                for channel in 0..3 {
-                    if count == self.message_as_bits.len() {
-                        break
-                    }
-
-                    for row in 0..8 {
-                        for column in 0..8 {
-                            let pixel = self.cover_image.get_pixel_mut(column + (col_index * 8),
-                                                                          row + (row_index * 8));
-
-                            pixel.data[channel] = self.modified_pixels[pixel_count] as u8;
-
-                            pixel_count += 1;
-                        }
-                    }
-
-                    count += 1;
-                }
-            }
+            self.dct_tiles.extend(&dct.forward());
         }
     }
 }
@@ -189,4 +151,14 @@ fn test_random_pixel_in_tile() {
     assert_eq!(r_pixel, r_pixel_from_tile);
     assert_eq!(g_pixel, g_pixel_from_tile);
     assert_eq!(b_pixel, b_pixel_from_tile);
+}
+
+#[test]
+fn delete() {
+    let mut cover_image = CoverImage::new();
+
+    cover_image.set_message("h");
+    cover_image.set_cover_image("src/testing.jpg");
+    cover_image.set_output_image_path("output.jpg");
+    cover_image.encode();
 }
