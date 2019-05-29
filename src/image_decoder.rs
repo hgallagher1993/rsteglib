@@ -1,5 +1,3 @@
-use std::slice;
-
 use image::{RgbImage, ImageBuffer};
 use discrete_transforms::dct_2d::Dct2D;
 use itertools::Itertools;
@@ -60,7 +58,6 @@ impl StegObject {
     fn tile_image(&mut self) {
         let (width, height) = self.steg_image.dimensions();
         let mut count = 0;
-        let mut pixel_count = 0;
 
         for row_index in 0..(height / 8) as u32 {
             for col_index in 0..(width / 8) as u32 {
