@@ -3,6 +3,15 @@ use bitreader::{BitReader};
 use itertools::Itertools;
 use discrete_transforms::dct_2d::Dct2D;
 
+const QUANTIZATION_TABLE: [i32; 64] = [16, 11, 10, 16,  24,  40,  51,  61,
+                                       12, 12, 14, 19,  26,  58,  60,  55,
+                                       14, 13, 16, 24,  40,  57,  69,  56,
+                                       14, 17, 22, 29,  51,  87,  80,  62,
+                                       18, 22, 37, 56,  68, 109, 103,  77,
+                                       24, 36, 55, 64,  81, 104, 113,  92,
+                                       49, 64, 78, 87, 103, 121, 120, 101,
+                                       72, 92, 95, 98, 112, 100, 103,  99];
+
 #[derive(Debug)]
 pub struct CoverImage {
     cover_image: RgbImage,
@@ -12,7 +21,8 @@ pub struct CoverImage {
     tiles: Vec<u8>,
     dct_tiles: Vec<f64>,
     quantized_tiles: Vec<i32>,
-    modified_pixels: Vec<f64>
+    dequantized_tiles: Vec<i32>,
+    idct_tiles: Vec<f64>,
 }
 
 impl CoverImage {
@@ -25,7 +35,8 @@ impl CoverImage {
             tiles: vec![],
             dct_tiles: vec![],
             quantized_tiles: vec![],
-            modified_pixels: vec![]
+            dequantized_tiles: vec![],
+            idct_tiles: vec![]
         }
     }
 
@@ -51,8 +62,7 @@ impl CoverImage {
         self.get_message_as_bits();
         self.tile_image();
         self.encode_message();
-
-        self.cover_image.save(self.output_image_path).unwrap();
+        self.save_image();
     }
 
     fn get_message_as_bits(&mut self) {
@@ -101,23 +111,76 @@ impl CoverImage {
         }
 
         self.quantize();
+
+        for (count, bit) in self.message_as_bits.iter().enumerate() {
+            if *bit == 1 as u8 {
+                self.quantized_tiles[count * 64] |= 1;
+            }
+            else {
+                self.quantized_tiles[count * 64] &= 0b1111_1110
+            }
+        }
+
+        self.dequantize();
+
+        for chunk in &self.dequantized_tiles.iter().chunks(64) {
+            let input = chunk.map(|x| *x as f64).collect_vec();
+
+            dct.set_input(input);
+
+            self.idct_tiles.extend(&dct.inverse());
+        }
+
+        self.idct_tiles = self.idct_tiles.iter()
+                                         .map(|x| (x * 1000.0).round() / 1000.0)
+                                         .collect_vec();
     }
 
     fn quantize(&mut self) {
-        let quantization_table = vec![16, 11, 10, 16,  24,  40,  51,  61,
-                                      12, 12, 14, 19,  26,  58,  60,  55,
-                                      14, 13, 16, 24,  40,  57,  69,  56,
-                                      14, 17, 22, 29,  51,  87,  80,  62,
-                                      18, 22, 37, 56,  68, 109, 103,  77,
-                                      24, 36, 55, 64,  81, 104, 113,  92,
-                                      49, 64, 78, 87, 103, 121, 120, 101,
-                                      72, 92, 95, 98, 112, 100, 103,  99];
-
         for x in 0..self.dct_tiles.len() {
-            let quantized_coeff = self.dct_tiles[x] / quantization_table[x % 64] as f64;
+            let quantized_coeff = self.dct_tiles[x] / QUANTIZATION_TABLE[x % 64] as f64;
 
-            self.quantized_tiles.push(quantized_coeff as i32);
+            self.quantized_tiles.push(quantized_coeff.round() as i32);
         }
+    }
+
+    fn dequantize(&mut self) {
+        for x in 0..self.quantized_tiles.len() {
+            let dequantized_coeff = self.quantized_tiles[x] * QUANTIZATION_TABLE[x % 64];
+
+            self.dequantized_tiles.push(dequantized_coeff);
+        }
+    }
+
+    fn save_image(&mut self) {
+        let (width, height) = self.cover_image.dimensions();
+        let mut count = 0;
+        let mut pixel_count = 0;
+
+        for row_index in 0..(height / 8) as u32 {
+            for col_index in 0..(width / 8) as u32 {
+                for channel in 0..3 {
+                    if count == self.message_as_bits.len() {
+                        break
+                    }
+
+                    for row in 0..8 {
+                        for column in 0..8 {
+                            let pixel = self.cover_image.get_pixel_mut(column + (col_index * 8),
+                                                                          row + (row_index * 8));
+
+                            pixel.data[channel] = self.idct_tiles[pixel_count] as u8;
+
+                            pixel_count += 1;
+                        }
+                    }
+
+                    count += 1;
+                }
+            }
+        }
+
+        self.cover_image.save(self.output_image_path).unwrap();
     }
 }
 
@@ -172,14 +235,4 @@ fn test_random_pixel_in_tile() {
     assert_eq!(r_pixel, r_pixel_from_tile);
     assert_eq!(g_pixel, g_pixel_from_tile);
     assert_eq!(b_pixel, b_pixel_from_tile);
-}
-
-#[test]
-fn delete() {
-    let mut cover_image = CoverImage::new();
-
-    cover_image.set_message("h");
-    cover_image.set_cover_image("src/testing.jpg");
-    cover_image.set_output_image_path("output.jpg");
-    cover_image.encode();
 }
