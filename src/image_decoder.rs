@@ -71,8 +71,6 @@ impl StegObject {
                             let pixel = self.steg_image.get_pixel(column + (col_index * 8),
                                                                      row + (row_index * 8));
 
-                            pixel_count += 1;
-
                             self.tiles.push(pixel.data[channel]);
                         }
                     }
