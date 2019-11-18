@@ -1,0 +1,16 @@
+[package]
+name = "rsteglib"
+version = "0.1.1"
+authors = ["Hugh Gallagher <hgallagher1993@gmail.com>"]
+description = "Rust Steganography Library"
+license = "MIT"
+repository = "https://github.com/hgallagher1993/rsteglib"
+homepage = "https://github.com/hgallagher1993/rsteglib"
+readme = "README.md"
+
+[dependencies]
+image = "0.20.1"
+bitreader = "0.3.1"
+num-traits = "0.2.6"
+itertools = "0.8.0"
+discrete_transforms = "0.1.3"

@@ -26,7 +26,7 @@ impl StegObject {
         }
     }
 
-    pub fn set_steg_image(&mut self, input_path: &'static str) -> &mut Self {
+    pub fn set_steg_image(&mut self, input_path: String) -> &mut Self {
         self.steg_image = image::open(input_path).unwrap().as_rgb8().unwrap().clone();
 
         self
@@ -38,7 +38,7 @@ impl StegObject {
         self
     }
 
-    pub fn decode(&mut self) {
+    pub fn decode(&mut self) -> String {
         self.tile_image();
 
         let mut dct = Dct2D::new();
@@ -53,6 +53,8 @@ impl StegObject {
 
         self.quantize();
         self.create_message();
+
+        self.message.clone()
     }
 
     fn tile_image(&mut self) {
@@ -104,8 +106,6 @@ impl StegObject {
 
             self.message.push_str(&String::from_utf8(vec![byte; 1]).unwrap());
         }
-
-        println!("{:?}", self.message);
     }
 }
 
@@ -114,6 +114,6 @@ fn test_decode() {
     let mut steg_object = StegObject::new();
 
     steg_object.set_message_length(8);
-    steg_object.set_steg_image("output.png");
+    steg_object.set_steg_image("output.png".to_string());
     steg_object.decode();
 }

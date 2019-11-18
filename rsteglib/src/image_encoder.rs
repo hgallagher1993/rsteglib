@@ -15,8 +15,8 @@ const QUANTIZATION_TABLE: [i32; 64] = [16, 11, 10, 16,  24,  40,  51,  61,
 #[derive(Debug)]
 pub struct CoverImage {
     cover_image: RgbImage,
-    message: &'static str,
-    output_image_path: &'static str,
+    message: String,
+    output_image_path: String,
     message_as_bits: Vec<u8>,
     tiles: Vec<u8>,
     dct_tiles: Vec<f64>,
@@ -29,8 +29,8 @@ impl CoverImage {
     pub fn new() -> CoverImage {
         CoverImage {
             cover_image: ImageBuffer::new(0, 0),
-            message: "",
-            output_image_path: "",
+            message: "".to_string(),
+            output_image_path: "".to_string(),
             message_as_bits: vec![],
             tiles: vec![],
             dct_tiles: vec![],
@@ -40,19 +40,19 @@ impl CoverImage {
         }
     }
 
-    pub fn set_cover_image(&mut self, input_path: &'static str) -> &mut Self {
+    pub fn set_cover_image(&mut self, input_path: String) -> &mut Self {
         self.cover_image = image::open(input_path).unwrap().as_rgb8().unwrap().clone();
 
         self
     }
 
-    pub fn set_message(&mut self, message: &'static str) -> &mut Self {
+    pub fn set_message(&mut self, message: String) -> &mut Self {
         self.message = message;
 
         self
     }
 
-    pub fn set_output_image_path(&mut self, output_path: &'static str) -> &mut Self {
+    pub fn set_output_image_path(&mut self, output_path: String) -> &mut Self {
         self.output_image_path = output_path;
 
         self
@@ -180,7 +180,7 @@ impl CoverImage {
             }
         }
 
-        self.cover_image.save(self.output_image_path).unwrap();
+        self.cover_image.save(&self.output_image_path).unwrap();
     }
 }
 
@@ -189,7 +189,7 @@ fn get_message_as_bits_test() {
     let test_bits = vec![0, 1, 1, 0, 1, 0, 0, 0];
     let mut cover_image = CoverImage::new();
 
-    cover_image.set_message("h");
+    cover_image.set_message("h".to_string());
     cover_image.get_message_as_bits();
 
     assert_eq!(cover_image.message_as_bits, test_bits);
@@ -199,8 +199,8 @@ fn get_message_as_bits_test() {
 fn tile_image_length_test() {
     let mut cover_image = CoverImage::new();
 
-    cover_image.set_message("h");
-    cover_image.set_cover_image("src/testing.jpg");
+    cover_image.set_message("h".to_string());
+    cover_image.set_cover_image("src/testing.jpg".to_string());
 
     // 64 = length of 1 tile, message.len() * 8 = number of tiles needed; 1 tile per bit
     let length = 64 * cover_image.message.len() * 8;
@@ -217,8 +217,8 @@ fn tile_image_length_test() {
 fn test_random_pixel_in_tile() {
     let mut cover_image = CoverImage::new();
 
-    cover_image.set_message("h");
-    cover_image.set_cover_image("src/testing.jpg");
+    cover_image.set_message("h".to_string());
+    cover_image.set_cover_image("src/testing.jpg".to_string());
     cover_image.get_message_as_bits();
     cover_image.tile_image();
 
