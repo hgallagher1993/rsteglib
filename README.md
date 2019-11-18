@@ -1,6 +1,6 @@
 # rsteglib
 
-Somewhat unusable, Maybe use
+Somewhat usable, Maybe use
 
 ```
 USAGE:
